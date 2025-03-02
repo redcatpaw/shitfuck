@@ -1,8 +1,14 @@
-//= require leaflet.locatecontrol/src/L.Control.Locate
+//= require leaflet.locatecontrol/dist/L.Control.Locate.umd
 
-$(document).ready(function () {
-  var defaultHomeZoom = 12;
-  var map, marker, deleted_lat, deleted_lon;
+(function () {
+  $(document).on("change", "#user_all", function () {
+    $("#user_list input[type=checkbox]").prop("checked", $("#user_all").prop("checked"));
+  });
+}());
+
+$(function () {
+  const defaultHomeZoom = 12;
+  let map, marker, deleted_lat, deleted_lon;
 
   if ($("#map").length) {
     map = L.map("map", {
@@ -10,12 +16,12 @@ $(document).ready(function () {
       zoomControl: false
     }).addLayer(new L.OSM.Mapnik());
 
-    var position = $("html").attr("dir") === "rtl" ? "topleft" : "topright";
+    const position = $("html").attr("dir") === "rtl" ? "topleft" : "topright";
 
     L.OSM.zoom({ position: position })
       .addTo(map);
 
-    var locate = L.control.locate({
+    const locate = L.control.locate({
       position: position,
       icon: "icon geolocate",
       iconLoading: "icon geolocate",
@@ -27,7 +33,7 @@ $(document).ready(function () {
       }
     }).addTo(map);
 
-    var locateContainer = locate.getContainer();
+    const locateContainer = locate.getContainer();
 
     $(locateContainer)
       .removeClass("leaflet-control-locate leaflet-bar")
@@ -58,20 +64,18 @@ $(document).ready(function () {
       map.on("click", function (e) {
         if (!$("#updatehome").is(":checked")) return;
 
-        var zoom = map.getZoom(),
-            precision = OSM.zoomPrecision(zoom),
-            location = e.latlng.wrap();
+        const [lat, lon] = OSM.cropLocation(e.latlng, map.getZoom());
 
-        $("#home_lat").val(location.lat.toFixed(precision));
-        $("#home_lon").val(location.lng.toFixed(precision));
+        $("#home_lat").val(lat);
+        $("#home_lon").val(lon);
 
         deleted_lat = null;
         deleted_lon = null;
         respondToHomeUpdate();
       }).on("moveend", function () {
-        var lat = $("#home_lat").val().trim(),
-            lon = $("#home_lon").val().trim(),
-            location;
+        const lat = $("#home_lat").val().trim(),
+              lon = $("#home_lon").val().trim();
+        let location;
 
         try {
           if (lat && lon) {
@@ -91,15 +95,15 @@ $(document).ready(function () {
       });
 
       $("#home_show").click(function () {
-        var lat = $("#home_lat").val(),
-            lon = $("#home_lon").val();
+        const lat = $("#home_lat").val(),
+              lon = $("#home_lon").val();
 
         map.setView([lat, lon], defaultHomeZoom);
       });
 
       $("#home_delete").click(function () {
-        var lat = $("#home_lat").val(),
-            lon = $("#home_lon").val();
+        const lat = $("#home_lat").val(),
+              lon = $("#home_lon").val();
 
         $("#home_lat, #home_lon").val("");
         deleted_lat = lat;
@@ -118,19 +122,19 @@ $(document).ready(function () {
       });
     } else {
       $("[data-user]").each(function () {
-        var user = $(this).data("user");
+        const user = $(this).data("user");
         if (user.lon && user.lat) {
           L.marker([user.lat, user.lon], { icon: OSM.getUserIcon(user.icon) }).addTo(map)
-            .bindPopup(user.description);
+            .bindPopup(user.description, { minWidth: 200 });
         }
       });
     }
   }
 
   function respondToHomeUpdate() {
-    var lat = $("#home_lat").val().trim(),
-        lon = $("#home_lon").val().trim(),
-        location;
+    const lat = $("#home_lat").val().trim(),
+          lon = $("#home_lon").val().trim();
+    let location;
 
     try {
       if (lat && lon) {
@@ -156,14 +160,14 @@ $(document).ready(function () {
   }
 
   function isCloseEnoughToMapCenter(location) {
-    var inputPt = map.latLngToContainerPoint(location),
-        centerPt = map.latLngToContainerPoint(map.getCenter());
+    const inputPt = map.latLngToContainerPoint(location),
+          centerPt = map.latLngToContainerPoint(map.getCenter());
 
     return centerPt.distanceTo(inputPt) < 10;
   }
 
   function updateAuthUID() {
-    var provider = $("select#user_auth_provider").val();
+    const provider = $("select#user_auth_provider").val();
 
     if (provider === "openid") {
       $("input#user_auth_uid").show().prop("disabled", false);
@@ -200,20 +204,16 @@ $(document).ready(function () {
     enableAuth();
   }
 
-  $("#user_all").change(function () {
-    $("#user_list input[type=checkbox]").prop("checked", $("#user_all").prop("checked"));
-  });
-
   $("#content.user_confirm").each(function () {
     $(this).hide();
     $(this).find("#confirm").submit();
   });
 
   $("input[name=legale]").change(function () {
-    var url = $(this).data("url");
-
     $("#contributorTerms").html("<div class='spinner-border' role='status'><span class='visually-hidden'>" + I18n.t("browse.start_rjs.loading") + "</span></div>");
-    $("#contributorTerms").load(url);
+    fetch($(this).data("url"))
+      .then(r => r.text())
+      .then(html => { $("#contributorTerms").html(html); });
   });
 
   $("#read_ct").on("click", function () {

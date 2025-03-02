@@ -1,9 +1,11 @@
-$(document).ready(function () {
-  var marker, map;
+$(function () {
+  let marker, map;
 
   function setLocation(e) {
-    $("#latitude").val(e.latlng.lat);
-    $("#longitude").val(e.latlng.lng);
+    const latlng = e.latlng.wrap();
+
+    $("#latitude").val(latlng.lat);
+    $("#longitude").val(latlng.lng);
 
     if (marker) {
       map.removeLayer(marker);
@@ -19,9 +21,9 @@ $(document).ready(function () {
     $("#map").show();
     $("#usemap").hide();
 
-    var params = $("#map").data();
-    var centre = [params.lat, params.lon];
-    var position = $("html").attr("dir") === "rtl" ? "topleft" : "topright";
+    const params = $("#map").data();
+    const centre = [params.lat, params.lon];
+    const position = $("html").attr("dir") === "rtl" ? "topleft" : "topright";
 
     map = L.map("map", {
       attributionControl: false,

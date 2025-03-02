@@ -2,8 +2,8 @@
 #
 # Table name: diary_entries
 #
-#  id            :bigint(8)        not null, primary key
-#  user_id       :bigint(8)        not null
+#  id            :bigint           not null, primary key
+#  user_id       :bigint           not null
 #  title         :string           not null
 #  body          :text             not null
 #  created_at    :datetime         not null
@@ -50,7 +50,7 @@ class DiaryEntry < ApplicationRecord
   after_save :spam_check
 
   def body
-    RichText.new(self[:body_format], self[:body])
+    @body ||= RichText.new(self[:body_format], self[:body])
   end
 
   private
